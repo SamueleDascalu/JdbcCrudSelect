@@ -32,10 +32,6 @@ public class Prodotto {
 		return codiceProdotto;
 	}
 
-	public void setCodiceProdotto(String codiceProdotto) {
-		this.codiceProdotto = codiceProdotto;
-	}
-
 	public String getDescrizione() {
 		return descrizione;
 	}

@@ -43,15 +43,14 @@ public class JdbcCrudSelect {
 			/****************************************************************************/
 
 			String selectFromClienteByCodiceProdotto = // imposta il testo del comando SQL da eseguire
-							  " SELECT codice_prodotto, descrizione, quantita_disponibile, prezzo  "
-							+ "   FROM prodotto                       "
-							+ "  WHERE prodotto.codice_prodotto LIKE 'TV%' ";
+					" SELECT codice_prodotto, descrizione, quantita_disponibile, prezzo  "
+							+ "   FROM prodotto                       " + "  WHERE prodotto.codice_prodotto LIKE ? ";
 
-			//String parametroCodiceProdotto = "'TV%'"; // imposta il valore del parametro codice fiscale
+			String parametroCodiceProdotto = "TV%"; // imposta il valore del parametro codice fiscale
 
 			PreparedStatement preparedStatement = // predispone JDBC per l'invio al database del comando SQL
 					jdbcConnectionToDatabase.prepareStatement(selectFromClienteByCodiceProdotto);
-			//preparedStatement.setString(1, parametroCodiceProdotto); // imposta il valore del parametro di ricerca
+			preparedStatement.setString(1, parametroCodiceProdotto); // imposta il valore del parametro di ricerca
 																		// codice
 																		// fiscale (parametro String)
 
@@ -73,24 +72,92 @@ public class JdbcCrudSelect {
 				if (rsSelect.wasNull()) {
 					descrizione = "";
 				}
-				
+
 				int quantita_disponibile = rsSelect.getInt("quantita_disponibile");
 				if (rsSelect.wasNull()) {
 					quantita_disponibile = 0;
 				}
-				
+
 				float prezzo = rsSelect.getFloat("prezzo");
 				if (rsSelect.wasNull()) {
 					prezzo = 0;
 				}
 
-				prodotti.add(new Prodotto(codProdotto, descrizione, quantita_disponibile, prezzo)); // istanzia un oggetto di tipo classe Cliente
-																									// inizializzandolo con i valori letti dal record
+				prodotti.add(new Prodotto(codProdotto, descrizione, quantita_disponibile, prezzo));
 			}
-			
-			for(Prodotto prodotto:prodotti) {
+
+			for (Prodotto prodotto : prodotti) {
 				if (prodotto != null) {
-					System.out.println("Dati del prodotto => "+prodotto.toString());
+					System.out.println("Dati del prodotto => " + prodotto.toString());
+				} else {
+					System.out.println("Il cliente ricercato non e presente!!!");
+				}
+			}
+
+			Prodotto prodotto = new Prodotto("TVLGC200", "Televisore LG C200", 10, 249.90f);
+
+			String clienteToInsert = "INSERT INTO prodotto (codice_prodotto, descrizione, quantita_disponibile, prezzo) "
+					+ "	VALUES (?,?,?,?)";
+
+			PreparedStatement preparedStatementInsert = jdbcConnectionToDatabase.prepareStatement(clienteToInsert);
+
+			preparedStatementInsert.setString(1, prodotto.getCodiceProdotto());
+			preparedStatementInsert.setString(2, prodotto.getDescrizione());
+			preparedStatementInsert.setInt(3, prodotto.getQuantita_disponibile());
+			preparedStatementInsert.setFloat(4, prodotto.getPrezzo());
+
+			preparedStatementInsert.executeUpdate();
+
+			System.out.println("Prodotto inserito: => " + prodotto.toString());
+
+			String selectFromClienteByCodiceProdottoAggiornato = // imposta il testo del comando SQL da eseguire
+					" SELECT codice_prodotto, descrizione, quantita_disponibile, prezzo  "
+							+ "   FROM prodotto                       " + "  WHERE prodotto.codice_prodotto LIKE ? ";
+
+			String parametroCodiceProdottoAggiornato = "TV%"; // imposta il valore del parametro codice fiscale
+
+			PreparedStatement preparedStatementAggiornato = // predispone JDBC per l'invio al database del comando SQL
+					jdbcConnectionToDatabase.prepareStatement(selectFromClienteByCodiceProdottoAggiornato);
+			preparedStatement.setString(1, parametroCodiceProdottoAggiornato); // imposta il valore del parametro di
+																				// ricerca
+			// codice
+			// fiscale (parametro String)
+
+			rsSelect = preparedStatementAggiornato.executeQuery(); // esegue la query di SELECT e si predisone a leggere
+															// i risutlati presenti in memoria nel DBMS
+
+			ArrayList<Prodotto> prodottiAggiornati = new ArrayList<Prodotto>();
+
+			while (rsSelect.next()) { // fino a che ci sono risutalti da leggere
+
+				String codProdotto = rsSelect.getString("codice_prodotto"); // lettura del valore del campo
+																			// codice_fiscale
+				if (rsSelect.wasNull()) {
+					codProdotto = "";
+				}
+
+				String descrizione // lettura del valore del campo 'nominativo'
+						= rsSelect.getString("descrizione");
+				if (rsSelect.wasNull()) {
+					descrizione = "";
+				}
+
+				int quantita_disponibile = rsSelect.getInt("quantita_disponibile");
+				if (rsSelect.wasNull()) {
+					quantita_disponibile = 0;
+				}
+
+				float prezzo = rsSelect.getFloat("prezzo");
+				if (rsSelect.wasNull()) {
+					prezzo = 0;
+				}
+
+				prodottiAggiornati.add(new Prodotto(codProdotto, descrizione, quantita_disponibile, prezzo));
+			}
+
+			for (Prodotto prodottoAggiornato : prodottiAggiornati) {
+				if (prodottoAggiornato != null) {
+					System.out.println("Dati del prodotto => " + prodottoAggiornato.toString());
 				} else {
 					System.out.println("Il cliente ricercato non e presente!!!");
 				}

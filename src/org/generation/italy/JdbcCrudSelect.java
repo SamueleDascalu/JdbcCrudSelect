@@ -13,6 +13,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException; //imposta classe SqlException per gestione errori nella comunicazione col database
 import java.util.ArrayList;
+import java.util.List;
 
 public class JdbcCrudSelect {
 
@@ -30,35 +31,73 @@ public class JdbcCrudSelect {
 			/****************************************************************************/
 			/* CONNESSIONE AL DATABASE */
 			/****************************************************************************/
-			Connection jdbcConnectionToDatabase = // esegue la connessione al dbms con riferimento al database, se
-													// fallisce genera eccezzione SQLException (effettuare il debugging
-													// per verificarlo)
+			Connection jdbcConnectionToDatabase =
 					DriverManager.getConnection(jdbcUrl, dbmsUserName, dbmsPassword);
 
-			System.out.println("Connessione al database magazzino riuscita!"); // visualizza messaggio per avvenuta
-																				// connessione al database
+			System.out.println("Connessione al database magazzino riuscita!");
 
 			/****************************************************************************/
 			/* ESECUZIONE DELLA QUERY DI SELECT */
 			/****************************************************************************/
 
-			String selectFromClienteByCodiceProdotto = // imposta il testo del comando SQL da eseguire
-					" SELECT codice_prodotto, descrizione, quantita_disponibile, prezzo  "
-							+ "   FROM prodotto                       " + "  WHERE prodotto.codice_prodotto LIKE ? ";
+			List<Prodotto> prodotti = querySelectTV(jdbcConnectionToDatabase);
+			
+			for (Prodotto televisore: prodotti) {
+				if (televisore != null) {
+					System.out.println("Dati del prodotto => " + televisore.toString());
+				} else {
+					System.out.println("Il prodotto ricercato non e presente!!!");
+				}
+			}
+			
+			/****************************************************************************/
+			/* ESECUZIONE DELLA QUERY DI INSERT */
+			/****************************************************************************/
 
-			String parametroCodiceProdotto = "TV%"; // imposta il valore del parametro codice fiscale
+			Prodotto prodotto = new Prodotto("TVLGC200", "Televisore LG C200", 10, 249.90f);
 
+			queryInsertTV(jdbcConnectionToDatabase, prodotto);
+
+			/****************************************************************************/
+			/* ESECUZIONE DELLA QUERY DI SELECT AGGIORNATA*/
+			/****************************************************************************/
+			
+			prodotti = querySelectTV(jdbcConnectionToDatabase);
+
+			for (Prodotto televisore : prodotti) {
+				if (televisore != null) {
+					System.out.println("Dati del prodotto => " + televisore.toString());
+				} else {
+					System.out.println("Il cliente ricercato non e presente!!!");
+				}
+			}
+
+		} catch (SQLException e) { // errore di tipo classe SQLException
+			// TODO Auto-generated catch block
+			e.printStackTrace(); // stampa la pila (stack) degli errori, dal pi� recente al meno recente
+		}
+
+	}
+
+	/*
+	 * METODO PER LA QUERY DI SELECT DEI PRODOTTI DI TIPO TELEVISORE
+	 * */
+	static ArrayList<Prodotto> querySelectTV(Connection connection){
+		String selectFromClienteByCodiceProdotto = // imposta il testo del comando SQL da eseguire
+				" SELECT codice_prodotto, descrizione, quantita_disponibile, prezzo  "
+			  + "   FROM prodotto                       " 
+			  + "  WHERE prodotto.codice_prodotto LIKE ? ";
+		
+		String parametroCodiceProdotto = "TV%";
+		try {
 			PreparedStatement preparedStatement = // predispone JDBC per l'invio al database del comando SQL
-					jdbcConnectionToDatabase.prepareStatement(selectFromClienteByCodiceProdotto);
-			preparedStatement.setString(1, parametroCodiceProdotto); // imposta il valore del parametro di ricerca
-																		// codice
-																		// fiscale (parametro String)
-
-			ResultSet rsSelect = preparedStatement.executeQuery(); // esegue la query di SELECT e si predisone a leggere
-																	// i risutlati presenti in memoria nel DBMS
-
+					connection.prepareStatement(selectFromClienteByCodiceProdotto);
+			preparedStatement.setString(1, parametroCodiceProdotto);
+			
+			ResultSet rsSelect = preparedStatement.executeQuery();
+			
 			ArrayList<Prodotto> prodotti = new ArrayList<Prodotto>();
-
+			
 			while (rsSelect.next()) { // fino a che ci sono risutalti da leggere
 
 				String codProdotto = rsSelect.getString("codice_prodotto"); // lettura del valore del campo
@@ -85,21 +124,19 @@ public class JdbcCrudSelect {
 
 				prodotti.add(new Prodotto(codProdotto, descrizione, quantita_disponibile, prezzo));
 			}
-
-			for (Prodotto prodotto : prodotti) {
-				if (prodotto != null) {
-					System.out.println("Dati del prodotto => " + prodotto.toString());
-				} else {
-					System.out.println("Il cliente ricercato non e presente!!!");
-				}
-			}
-
-			Prodotto prodotto = new Prodotto("TVLGC200", "Televisore LG C200", 10, 249.90f);
-
-			String clienteToInsert = "INSERT INTO prodotto (codice_prodotto, descrizione, quantita_disponibile, prezzo) "
-					+ "	VALUES (?,?,?,?)";
-
-			PreparedStatement preparedStatementInsert = jdbcConnectionToDatabase.prepareStatement(clienteToInsert);
+			
+			return prodotti;	
+		} catch(SQLException e) {
+			e.getStackTrace();
+			return null;
+		}
+	}
+	
+	static void queryInsertTV(Connection connection, Prodotto prodotto) {
+		String clienteToInsert = "INSERT INTO prodotto (codice_prodotto, descrizione, quantita_disponibile, prezzo) "
+				+ "	VALUES (?,?,?,?)";
+		try {
+			PreparedStatement preparedStatementInsert = connection.prepareStatement(clienteToInsert);
 
 			preparedStatementInsert.setString(1, prodotto.getCodiceProdotto());
 			preparedStatementInsert.setString(2, prodotto.getDescrizione());
@@ -109,65 +146,9 @@ public class JdbcCrudSelect {
 			preparedStatementInsert.executeUpdate();
 
 			System.out.println("Prodotto inserito: => " + prodotto.toString());
-
-			String selectFromClienteByCodiceProdottoAggiornato = // imposta il testo del comando SQL da eseguire
-					" SELECT codice_prodotto, descrizione, quantita_disponibile, prezzo  "
-							+ "   FROM prodotto                       " + "  WHERE prodotto.codice_prodotto LIKE ? ";
-
-			String parametroCodiceProdottoAggiornato = "TV%"; // imposta il valore del parametro codice fiscale
-
-			PreparedStatement preparedStatementAggiornato = // predispone JDBC per l'invio al database del comando SQL
-					jdbcConnectionToDatabase.prepareStatement(selectFromClienteByCodiceProdottoAggiornato);
-			preparedStatement.setString(1, parametroCodiceProdottoAggiornato); // imposta il valore del parametro di
-																				// ricerca
-			// codice
-			// fiscale (parametro String)
-
-			rsSelect = preparedStatementAggiornato.executeQuery(); // esegue la query di SELECT e si predisone a leggere
-															// i risutlati presenti in memoria nel DBMS
-
-			ArrayList<Prodotto> prodottiAggiornati = new ArrayList<Prodotto>();
-
-			while (rsSelect.next()) { // fino a che ci sono risutalti da leggere
-
-				String codProdotto = rsSelect.getString("codice_prodotto"); // lettura del valore del campo
-																			// codice_fiscale
-				if (rsSelect.wasNull()) {
-					codProdotto = "";
-				}
-
-				String descrizione // lettura del valore del campo 'nominativo'
-						= rsSelect.getString("descrizione");
-				if (rsSelect.wasNull()) {
-					descrizione = "";
-				}
-
-				int quantita_disponibile = rsSelect.getInt("quantita_disponibile");
-				if (rsSelect.wasNull()) {
-					quantita_disponibile = 0;
-				}
-
-				float prezzo = rsSelect.getFloat("prezzo");
-				if (rsSelect.wasNull()) {
-					prezzo = 0;
-				}
-
-				prodottiAggiornati.add(new Prodotto(codProdotto, descrizione, quantita_disponibile, prezzo));
-			}
-
-			for (Prodotto prodottoAggiornato : prodottiAggiornati) {
-				if (prodottoAggiornato != null) {
-					System.out.println("Dati del prodotto => " + prodottoAggiornato.toString());
-				} else {
-					System.out.println("Il cliente ricercato non e presente!!!");
-				}
-			}
-
-		} catch (SQLException e) { // errore di tipo classe SQLException
-			// TODO Auto-generated catch block
-			e.printStackTrace(); // stampa la pila (stack) degli errori, dal pi� recente al meno recente
+		} catch(SQLException e) {
+			e.getStackTrace();
 		}
-
 	}
-
+	
 }

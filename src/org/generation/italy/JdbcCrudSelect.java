@@ -82,73 +82,65 @@ public class JdbcCrudSelect {
 	/*
 	 * METODO PER LA QUERY DI SELECT DEI PRODOTTI DI TIPO TELEVISORE
 	 * */
-	static ArrayList<Prodotto> querySelectTV(Connection connection){
+	static ArrayList<Prodotto> querySelectTV(Connection connection) throws SQLException{
 		String selectFromClienteByCodiceProdotto = // imposta il testo del comando SQL da eseguire
 				" SELECT codice_prodotto, descrizione, quantita_disponibile, prezzo  "
 			  + "   FROM prodotto                       " 
 			  + "  WHERE prodotto.codice_prodotto LIKE ? ";
 		
 		String parametroCodiceProdotto = "TV%";
-		try {
-			PreparedStatement preparedStatement = // predispone JDBC per l'invio al database del comando SQL
-					connection.prepareStatement(selectFromClienteByCodiceProdotto);
-			preparedStatement.setString(1, parametroCodiceProdotto);
-			
-			ResultSet rsSelect = preparedStatement.executeQuery();
-			
-			ArrayList<Prodotto> prodotti = new ArrayList<Prodotto>();
-			
-			while (rsSelect.next()) { // fino a che ci sono risutalti da leggere
+		PreparedStatement preparedStatement = // predispone JDBC per l'invio al database del comando SQL
+				connection.prepareStatement(selectFromClienteByCodiceProdotto);
+		preparedStatement.setString(1, parametroCodiceProdotto);
+		
+		ResultSet rsSelect = preparedStatement.executeQuery();
+		
+		ArrayList<Prodotto> prodotti = new ArrayList<Prodotto>();
+		
+		while (rsSelect.next()) { // fino a che ci sono risutalti da leggere
 
-				String codProdotto = rsSelect.getString("codice_prodotto"); // lettura del valore del campo
-																			// codice_fiscale
-				if (rsSelect.wasNull()) {
-					codProdotto = "";
-				}
-
-				String descrizione // lettura del valore del campo 'nominativo'
-						= rsSelect.getString("descrizione");
-				if (rsSelect.wasNull()) {
-					descrizione = "";
-				}
-
-				int quantita_disponibile = rsSelect.getInt("quantita_disponibile");
-				if (rsSelect.wasNull()) {
-					quantita_disponibile = 0;
-				}
-
-				float prezzo = rsSelect.getFloat("prezzo");
-				if (rsSelect.wasNull()) {
-					prezzo = 0;
-				}
-
-				prodotti.add(new Prodotto(codProdotto, descrizione, quantita_disponibile, prezzo));
+			String codProdotto = rsSelect.getString("codice_prodotto"); // lettura del valore del campo
+																		// codice_fiscale
+			if (rsSelect.wasNull()) {
+				codProdotto = "";
 			}
-			
-			return prodotti;	
-		} catch(SQLException e) {
-			e.getStackTrace();
-			return null;
+
+			String descrizione // lettura del valore del campo 'nominativo'
+					= rsSelect.getString("descrizione");
+			if (rsSelect.wasNull()) {
+				descrizione = "";
+			}
+
+			int quantita_disponibile = rsSelect.getInt("quantita_disponibile");
+			if (rsSelect.wasNull()) {
+				quantita_disponibile = 0;
+			}
+
+			float prezzo = rsSelect.getFloat("prezzo");
+			if (rsSelect.wasNull()) {
+				prezzo = 0;
+			}
+
+			prodotti.add(new Prodotto(codProdotto, descrizione, quantita_disponibile, prezzo));
 		}
+		
+		return prodotti;	
 	}
 	
-	static void queryInsertTV(Connection connection, Prodotto prodotto) {
+	static void queryInsertTV(Connection connection, Prodotto prodotto) throws SQLException {
 		String clienteToInsert = "INSERT INTO prodotto (codice_prodotto, descrizione, quantita_disponibile, prezzo) "
 				+ "	VALUES (?,?,?,?)";
-		try {
-			PreparedStatement preparedStatementInsert = connection.prepareStatement(clienteToInsert);
+		
+		PreparedStatement preparedStatementInsert = connection.prepareStatement(clienteToInsert);
 
-			preparedStatementInsert.setString(1, prodotto.getCodiceProdotto());
-			preparedStatementInsert.setString(2, prodotto.getDescrizione());
-			preparedStatementInsert.setInt(3, prodotto.getQuantita_disponibile());
-			preparedStatementInsert.setFloat(4, prodotto.getPrezzo());
+		preparedStatementInsert.setString(1, prodotto.getCodiceProdotto());
+		preparedStatementInsert.setString(2, prodotto.getDescrizione());
+		preparedStatementInsert.setInt(3, prodotto.getQuantita_disponibile());
+		preparedStatementInsert.setFloat(4, prodotto.getPrezzo());
 
-			preparedStatementInsert.executeUpdate();
+		preparedStatementInsert.executeUpdate();
 
-			System.out.println("Prodotto inserito: => " + prodotto.toString());
-		} catch(SQLException e) {
-			e.getStackTrace();
-		}
+		System.out.println("Prodotto inserito: => " + prodotto.toString());
 	}
 	
 }
